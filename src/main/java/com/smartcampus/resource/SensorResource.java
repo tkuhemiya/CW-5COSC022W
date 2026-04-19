@@ -1,5 +1,6 @@
 package com.smartcampus.resource;
 
+import com.smartcampus.model.Room;
 import com.smartcampus.model.Sensor;
 import com.smartcampus.data.DataStore;
 import com.smartcampus.exception.LinkedResourceNotFoundException;
@@ -52,8 +53,11 @@ public class SensorResource {
             if (!DataStore.rooms.containsKey(sensor.getRoomId())) {
                 throw new LinkedResourceNotFoundException("Room", sensor.getRoomId());
             }
-            // Add sensor to room's sensorIds list for data consistency
-            DataStore.rooms.get(sensor.getRoomId()).getSensorIds().add(sensor.getId());
+
+            Room room = DataStore.rooms.get(sensor.getRoomId());
+            synchronized (room) {
+                room.getSensorIds().add(sensor.getId());
+            }
         }
         
         DataStore.sensors.put(sensor.getId(), sensor);

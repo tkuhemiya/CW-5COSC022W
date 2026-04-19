@@ -59,22 +59,29 @@ public class SensorRoomResource {
     public Response deleteRoom(@PathParam("roomId") String roomId) {
         Room room = DataStore.rooms.get(roomId);
         
-        // Idempotent: if room doesn't exist, return 204 (resource is gone)
         if (room == null) {
             return Response.status(Response.Status.NO_CONTENT).build();
         }
-        
-        List<String> sensorIds = room.getSensorIds();
-        if (sensorIds != null && !sensorIds.isEmpty()) {
-            for (String sensorId : sensorIds) {
-                Sensor sensor = DataStore.sensors.get(sensorId);
-                if (sensor != null && "ACTIVE".equals(sensor.getStatus())) {
-                    throw new RoomNotEmptyException(roomId, sensorId);
+
+        synchronized (room) {
+            // re fetch inside to get latest state
+            room = DataStore.rooms.get(roomId);
+            if (room == null) {
+                return Response.status(Response.Status.NO_CONTENT).build();
+            }
+            
+            List<String> sensorIds = room.getSensorIds();
+            if (sensorIds != null && !sensorIds.isEmpty()) {
+                for (String sensorId : sensorIds) {
+                    Sensor sensor = DataStore.sensors.get(sensorId);
+                    if (sensor != null && "ACTIVE".equals(sensor.getStatus())) {
+                        throw new RoomNotEmptyException(roomId, sensorId);
+                    }
                 }
             }
+            
+            DataStore.rooms.remove(roomId);
+            return Response.status(Response.Status.NO_CONTENT).build();
         }
-        
-        DataStore.rooms.remove(roomId);
-        return Response.status(Response.Status.NO_CONTENT).build();
     }
 }

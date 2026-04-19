@@ -1,9 +1,9 @@
 package com.smartcampus.model;
 
 public class SensorReading {
-    private String id;           // Unique reading event ID (UUID recommended)
-    private long timestamp;      // Epoch time (ms) when the reading was captured
-    private double value;        // The actual metric value recorded by hardware
+    private String id;
+    private long timestamp;
+    private double value;
 
     public SensorReading() {
     }

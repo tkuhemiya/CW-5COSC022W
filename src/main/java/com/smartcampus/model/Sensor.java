@@ -1,11 +1,11 @@
 package com.smartcampus.model;
 
 public class Sensor {
-    private String id;           // Unique identifier, e.g., "TEMP-001"
-    private String type;         // Category, e.g., "Temperature", "Occupancy", "CO2"
-    private String status;       // Current state: "ACTIVE", "MAINTENANCE", or "OFFLINE"
-    private double currentValue; // Most recent measurement recorded
-    private String roomId;       // Foreign key linking to the Room
+    private String id;
+    private String type;
+    private String status;
+    private double currentValue;
+    private String roomId;
 
     public Sensor() {
     }

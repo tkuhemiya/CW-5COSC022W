@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Room {
-    private String id;           // Unique identifier, e.g., "LIB-301"
-    private String name;         // Human-readable name, e.g., "Library Quiet Study"
-    private int capacity;        // Maximum occupancy for safety regulations
-    private List<String> sensorIds = new ArrayList<>(); // IDs of sensors in this room
+    private String id;
+    private String name;
+    private int capacity;
+    private List<String> sensorIds = new ArrayList<>();
 
     public Room() {
     }

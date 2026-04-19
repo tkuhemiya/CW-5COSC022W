@@ -7,9 +7,10 @@ import com.smartcampus.exception.SensorUnavailableException;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 public class SensorReadingResource {
 
@@ -30,7 +31,7 @@ public class SensorReadingResource {
         }
 
         List<SensorReading> history = DataStore.readings.getOrDefault(sensorId, List.of());
-        return Response.ok(history).build();
+        return Response.ok(List.copyOf(history)).build();
     }
 
     @POST
@@ -54,8 +55,16 @@ public class SensorReadingResource {
             throw new SensorUnavailableException(sensorId, sensor.getStatus());
         }
 
-        DataStore.readings.computeIfAbsent(sensorId, k -> new ArrayList<>()).add(reading);
-        sensor.setCurrentValue(reading.getValue());
+        List<SensorReading> readingList = DataStore.readings.computeIfAbsent(sensorId, 
+            k -> Collections.synchronizedList(new ArrayList<>()));
+        
+        synchronized (readingList) {
+            readingList.add(reading);
+        }
+        
+        synchronized (sensor) {
+            sensor.setCurrentValue(reading.getValue());
+        }
 
         return Response.status(Response.Status.CREATED)
             .entity(reading)
