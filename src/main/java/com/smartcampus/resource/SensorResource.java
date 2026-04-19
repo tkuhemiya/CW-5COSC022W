@@ -12,6 +12,11 @@ import java.util.stream.Collectors;
 @Path("/sensors")
 public class SensorResource {
 
+    @Path("/{sensorId}/readings")
+    public SensorReadingResource getReadingResource(@PathParam("sensorId") String sensorId) {
+        return new SensorReadingResource(sensorId);
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<Sensor> getAllSensors(@QueryParam("type") String type) {
