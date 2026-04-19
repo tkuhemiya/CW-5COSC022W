@@ -2,6 +2,7 @@ package com.smartcampus.resource;
 
 import com.smartcampus.model.Sensor;
 import com.smartcampus.data.DataStore;
+import com.smartcampus.exception.LinkedResourceNotFoundException;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -47,13 +48,12 @@ public class SensorResource {
                 .build();
         }
         
-        // Verify roomId exists
         if (sensor.getRoomId() != null && !sensor.getRoomId().isEmpty()) {
             if (!DataStore.rooms.containsKey(sensor.getRoomId())) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("error", "Room does not exist"))
-                    .build();
+                throw new LinkedResourceNotFoundException("Room", sensor.getRoomId());
             }
+            // Add sensor to room's sensorIds list for data consistency
+            DataStore.rooms.get(sensor.getRoomId()).getSensorIds().add(sensor.getId());
         }
         
         DataStore.sensors.put(sensor.getId(), sensor);

@@ -3,6 +3,7 @@ package com.smartcampus.resource;
 import com.smartcampus.model.Sensor;
 import com.smartcampus.model.SensorReading;
 import com.smartcampus.data.DataStore;
+import com.smartcampus.exception.SensorUnavailableException;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -49,10 +50,11 @@ public class SensorReadingResource {
                 .build();
         }
 
-        // Initialize list
-        DataStore.readings.computeIfAbsent(sensorId, k -> new ArrayList<>()).add(reading);
+        if ("MAINTENANCE".equals(sensor.getStatus())) {
+            throw new SensorUnavailableException(sensorId, sensor.getStatus());
+        }
 
-        // Update parents currentValue
+        DataStore.readings.computeIfAbsent(sensorId, k -> new ArrayList<>()).add(reading);
         sensor.setCurrentValue(reading.getValue());
 
         return Response.status(Response.Status.CREATED)

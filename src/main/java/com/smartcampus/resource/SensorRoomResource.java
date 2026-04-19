@@ -3,6 +3,7 @@ package com.smartcampus.resource;
 import com.smartcampus.model.Room;
 import com.smartcampus.model.Sensor;
 import com.smartcampus.data.DataStore;
+import com.smartcampus.exception.RoomNotEmptyException;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -55,28 +56,20 @@ public class SensorRoomResource {
 
     @DELETE
     @Path("/{roomId}")
-    @Produces(MediaType.APPLICATION_JSON)
     public Response deleteRoom(@PathParam("roomId") String roomId) {
         Room room = DataStore.rooms.get(roomId);
+        
+        // Idempotent: if room doesn't exist, return 204 (resource is gone)
         if (room == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                .entity(Map.of("error", "Room not found"))
-                .build();
+            return Response.status(Response.Status.NO_CONTENT).build();
         }
         
-        // Check if room have active sensors
         List<String> sensorIds = room.getSensorIds();
         if (sensorIds != null && !sensorIds.isEmpty()) {
             for (String sensorId : sensorIds) {
                 Sensor sensor = DataStore.sensors.get(sensorId);
                 if (sensor != null && "ACTIVE".equals(sensor.getStatus())) {
-                    return Response.status(Response.Status.CONFLICT)
-                        .entity(Map.of(
-                            "error", "Cannot delete room with active sensors",
-                            "roomId", roomId,
-                            "activeSensorId", sensorId
-                        ))
-                        .build();
+                    throw new RoomNotEmptyException(roomId, sensorId);
                 }
             }
         }
