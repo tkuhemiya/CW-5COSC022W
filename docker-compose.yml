@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  smartcampus-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartcampus-api
+    ports:
+      - "8080:8080"
+    environment:
+      - CATALINA_OPTS=-Xmx512m # max heap size limit
+    restart: unless-stopped
