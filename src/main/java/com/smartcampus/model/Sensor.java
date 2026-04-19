@@ -1,4 +1,4 @@
-package com.smartcampus.resource;
+package com.smartcampus.model;
 
 public class Sensor {
     private String id;           // Unique identifier, e.g., "TEMP-001"

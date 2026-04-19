@@ -1,4 +1,4 @@
-package com.smartcampus.resource;
+package com.smartcampus.model;
 
 public class SensorReading {
     private String id;           // Unique reading event ID (UUID recommended)

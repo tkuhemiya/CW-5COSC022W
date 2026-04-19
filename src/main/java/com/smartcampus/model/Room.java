@@ -1,4 +1,4 @@
-package com.smartcampus.resource;
+package com.smartcampus.model;
 
 import java.util.ArrayList;
 import java.util.List;
