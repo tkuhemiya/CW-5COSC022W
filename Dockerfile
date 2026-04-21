@@ -6,7 +6,7 @@ RUN mvn -B -q -e -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-FROM tomcat:10.1-jre17-temurin-alpine
+FROM tomcat:9-jre11
 
 # Remove default tomcat app
 RUN rm -rf /usr/local/tomcat/webapps/*

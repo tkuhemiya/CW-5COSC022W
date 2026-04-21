@@ -80,7 +80,6 @@ copy `target/smartcampus-api.war` to tomcat's `webapps/ROOT.war`
 
 ### Option 2: Docker
 ```bash
-mvn clean package
 docker-compose up --build
 ```
 
