@@ -7,6 +7,7 @@ import com.smartcampus.exception.RoomNotEmptyException;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,7 @@ public class SensorRoomResource {
         
         DataStore.rooms.put(room.getId(), room);
         return Response.status(Response.Status.CREATED)
+            .location(UriBuilder.fromPath("/api/v1/rooms/{id}").build(room.getId()))
             .entity(room)
             .build();
     }
