@@ -69,25 +69,40 @@ public class SensorReading {
 | Servlet Container | Tomcat 9 |
 | JSON Processing | Jackson |
 | Build Tool | Maven |
-| Java Version | 8 (source/target), 11 (runtime) |
+| Java Version | 8 |
 | Architecture | RESTful API with sub-resource locators |
 
 ## Building and Running
 
-### Option 1: Tomcat
+### Prerequisites
+- JDK 8 or later
+- Maven 3.6+
+- A Servlet 3.1+ container
 
-copy `target/smartcampus-api.war` to tomcat's `webapps/ROOT.war`
- ```bash
-   mvn clean package
-   cp target/smartcampus-api.war /path/to/tomcat/webapps/ROOT.war
-```
+### Build
 
-### Option 2: Docker
 ```bash
-docker-compose up --build
+mvn clean package
+# produces: target/smartcampus-api.war
 ```
 
-The server will start on `http://localhost:8080/`, the API is available at `http://localhost:8080/api/v1/`.
+### Deploy
+
+You can run the application in two ways:
+
+#### Option 1: Run with NetBeans
+- Open the project in NetBeans and run it. The API will be available at `http://localhost:8080/smartcampus-api/api/v1`, This is because the default context root matches the WAR file name (`smartcampus-api`).
+- Deploying to the root context (`/`) may fail because a default `ROOT` application already exists in the server. You must remove or replace the existing `ROOT` application to use `/` and the api be at `http://localhost:8080/api/v1`.
+
+#### Option 2: Deploy to a Servlet Container (Tomcat)
+- Build and copy the WAR file to the container’s `webapps/` directory:
+
+```bash
+mvn clean package
+cp target/smartcampus-api.war /path/to/tomcat/webapps/ROOT.war
+```
+
+- The server will start on `http://localhost:8080/`, the API is available at `http://localhost:8080/api/v1/`.
 
 ---
 
@@ -153,7 +168,7 @@ curl -X POST http://localhost:8080/api/v1/sensors \
 
 By default, a JAX-RS resource class is **request-scoped**, meaning a new instance is created for each HTTP request. This is different from **singleton scope**, where the same instance would be shared across all requests. The request-scoped default is actually safer for thread safety because it prevents accidental state sharing between requests, but it also means we cannot use instance fields to hold shared data.
 
-This lifecycle matters because if we used instance fields for the `DataStore`, each request would see a different (empty) map, causing data to appear to "disappear" between requests. For example, if `SensorRoomResource` had a private field `Map<String, Room> rooms = new HashMap<>()`, Room A created in Request 1 wouldn't exist in Request 2 because each request gets a fresh resource instance.
+This lifecycle matters because if we used instance fields for the `DataStore`, each request would see a different empty map, causing data to appear to "disappear" between requests. For example, if `SensorRoomResource` had a private field `Map<String, Room> rooms = new HashMap<>()`, Room A created in Request 1 wouldn't exist in Request 2 because each request gets a fresh resource instance.
 
 To solve this, the project uses a **static `DataStore`** with `ConcurrentHashMap`:
 ```java
@@ -161,7 +176,7 @@ public static final Map<String, Room> rooms = new ConcurrentHashMap<>();
 public static final Map<String, Sensor> sensors = new ConcurrentHashMap<>();
 public static final Map<String, List<SensorReading>> readings = new ConcurrentHashMap<>();
 ```
-`ConcurrentHashMap` is thread-safe by design — multiple threads can read and write without corrupting the data structure. We also use `synchronized` blocks around compound operations (like adding a sensor to a room's sensor list) to ensure consistency when multiple requests modify related data at the same time.
+`ConcurrentHashMap` is thread-safe by design multiple threads can read and write without corrupting the data structure. We also use `synchronized` blocks around compound operations like adding a sensor to a room's sensor list to ensure consistency when multiple requests modify related data at the same time.
 
 ### Question 1.2
 > **Question:** Why is "Hypermedia" (links and navigation within responses) considered a hallmark of advanced RESTful design (HATEOAS)? How does this approach benefit client developers compared to static documentation?
@@ -193,18 +208,19 @@ Instead of constructing URLs manually, the client can follow the links returned 
 
 Returning only IDs uses less bandwidth, but it forces the client to make extra requests before it can display useful room details. This creates the **N+1 requests problem**: 1 request to get the list of IDs, plus N additional requests to fetch each room's details. If there are 100 rooms, that's 101 total requests.
 
-Returning full room objects increases response size, but it usually simplifies client processing and reduces the number of round trips required. For this reason, full objects are generally more efficient for typical application use, while IDs are only preferable when minimal payload size is the priority (e.g., mobile apps with limited data plans).
+Returning full room objects increases response size, but it usually simplifies client processing and reduces the number of round trips required. For this reason, full objects are generally more efficient for typical application use, while IDs are only preferable when minimal payload size is the priority.
 
 For example:
 ```json
 // IDs only - creates N+1 problem
-["LIB-301", "LAB-101", "OFF-205"]
+["LIB-001", "LAB-001", "OFF-001"]
 // Client must then call GET /rooms/LIB-301, GET /rooms/LAB-101, etc.
 
 // Full room objects - single request, all data
 [
-  {"id": "LIB-301", "name": "Library Quiet Study", "capacity": 50, "sensorIds": ["TEMP-001"]},
-  {"id": "LAB-101", "name": "Computer Lab A", "capacity": 30, "sensorIds": []}
+  {"id": "LIB-001", "name": "Library Quiet Study", "capacity": 50, "sensorIds": ["TEMP-001"]},
+  {"id": "LAB-001", "name": "Computer Lab A", "capacity": 30, "sensorIds": []}
+  {"id": "OFF-001", "name": "Teachers Office", "capacity": 10, "sensorIds": []}
 ]
 ```
 If the client needs the room name and capacity anyway, the second option is more practical.
@@ -212,9 +228,9 @@ If the client needs the room name and capacity anyway, the second option is more
 ### Question 2.2
 > **Question:** Is the DELETE operation idempotent in your implementation? Justify this by describing what happens if a client sends the same DELETE request multiple times.
 
-Yes, the DELETE operation is idempotent in this implementation. An operation is idempotent when repeating it multiple times produces the same result as doing it once. In this case, whether the room existed initially or not, after any number of DELETE requests, the final state is the same: the room is absent. This is the mathematical definition of idempotency.
+Yes, the DELETE operation is idempotent in this implementation. An operation is idempotent when repeating it multiple times produces the same result as doing it once. In this case, whether the room existed initially or not, after any number of DELETE requests, the final state is the same: the room is absent.
 
-Here's what happens:
+what happens in the application:
 - **First DELETE**: Room exists → gets deleted → returns `204 No Content`. Server state: room is absent.
 - **Second DELETE**: Room already absent → still returns `204 No Content`. Server state: room is absent.
 - **N-th DELETE**: Same result, same state.
@@ -234,7 +250,7 @@ public Response deleteRoom(@PathParam("roomId") String roomId) {
     return Response.status(Response.Status.NO_CONTENT).build();
 }
 ```
-The important point is that the final server state is identical after one DELETE or repeated DELETE requests — the room is gone. This is different from non-idempotent operations like POST (creating a room twice creates two rooms).
+Importantly the final server state is identical after one DELETE or repeated DELETE requests. The room is gone. This is different from non-idempotent operations like POST, for example creating a room twice creates two rooms.
 
 ---
 
@@ -266,7 +282,7 @@ Response: `HTTP 201 Created`
 
 Query parameters are better suited to filtering because they express a condition on a collection rather than a separate resource. For example, `GET /api/v1/sensors?type=CO2` clearly means “return only sensors of type CO2”. Query parameters are also more flexible because several filters can be combined in one request, such as `?type=CO2&status=ACTIVE`, without changing the route structure.
 
-In contrast, using `/api/v1/sensors/type/CO2` incorrectly implies that 'CO2' is a sub-resource (like a collection), when it's actually a filter criterion on the sensors collection. This design is less flexible — adding another filter like status would require a completely different URL structure (e.g., `/api/v1/sensors/type/CO2/status/ACTIVE`), making the API harder to maintain.
+In contrast, using `/api/v1/sensors/type/CO2` incorrectly implies that 'CO2' is a sub-resource (like a collection), when it's actually a filter criterion on the sensors collection. This design is less flexible: adding another filter like status would require a completely different URL structure (e.g., `/api/v1/sensors/type/CO2/status/ACTIVE`), making the API harder to maintain.
 
 This matches the implementation in the resource class:
 ```java
@@ -293,7 +309,7 @@ This is more suitable than path-based filtering because the path should identify
 ### Question 4.1:
 > **Question:** Discuss the architectural benefits of the Sub-Resource Locator pattern. How does delegating logic to separate classes help manage complexity in large APIs compared to defining every nested path in one massive controller class?
 
-The sub-resource locator pattern improves maintainability by moving nested functionality into dedicated classes. In this project, the sensor resource delegates `/sensors/{sensorId}/readings` to `SensorReadingResource`, which keeps sensor handling and reading handling separate. This approach reduces class size, improves clarity, and makes the API easier to extend than placing all nested routes in one large controller. Separate classes also improve testability — `SensorReadingResource` can be unit-tested independently without loading the entire `SensorResource`.
+The sub-resource locator pattern improves maintainability by moving nested functionality into dedicated classes. In this project, the sensor resource delegates `/sensors/{sensorId}/readings` to `SensorReadingResource`, which keeps sensor handling and reading handling separate. This approach reduces class size, improves clarity, and makes the API easier to extend than placing all nested routes in one large controller. Separate classes also improve testability - `SensorReadingResource` can be unit-tested independently without loading the entire `SensorResource`.
 
 The implementation uses a sub-resource locator method:
 ```java
@@ -326,7 +342,7 @@ As a result, each class has a narrower responsibility, which improves readabilit
 
 HTTP 422 is more appropriate because the endpoint itself exists, but the submitted data cannot be processed successfully. In this project, a request to create a sensor may be syntactically valid JSON, but if the `roomId` does not refer to an existing room, the problem is with the content of the payload rather than the URL.
 
-A `404 Not Found` would incorrectly suggest that the `/api/v1/sensors` endpoint doesn't exist, when in fact the endpoint is perfectly valid and only the `roomId` value in the JSON payload is invalid. This distinction matters for API consumers: a 404 tells them to check their URL, while a 422 tells them to check their request body. For example, if a client posts `{"id": "TEMP-001", "roomId": "NON-EXISTENT"}` to `/api/v1/sensors`, returning 404 would be confusing because the URL is correct — the issue is specifically that room "NON-EXISTENT" doesn't exist.
+A `404 Not Found` would incorrectly suggest that the `/api/v1/sensors` endpoint doesn't exist, when in fact the endpoint is perfectly valid and only the `roomId` value in the JSON payload is invalid. This distinction matters for API consumers: a 404 tells them to check their URL, while a 422 tells them to check their request body. For example, if a client posts `{"id": "TEMP-001", "roomId": "NON-EXISTENT"}` to `/api/v1/sensors`, returning 404 would be confusing because the URL is correct. The issue is specifically that room "NON-EXISTENT" doesn't exist.
 
 The project maps this error with an exception mapper:
 ```java
@@ -367,7 +383,7 @@ java.lang.NullPointerException: Cannot invoke "com.smartcampus.model.Room.getId(
     at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:144)
 ```
 
-From this single error, an attacker learns:
+From this error, an attacker learns:
 1. The exact package structure (`com.smartcampus.resource`)
 2. The class name (`SensorRoomResource`) and method (`createRoom`)
 3. The internal model class (`Room`) and its methods (`getId`)
