@@ -5,5 +5,7 @@ import javax.ws.rs.ApplicationPath;
 
 @ApplicationPath("/api/v1")
 public class SmartCampusApplication extends ResourceConfig {
-
+    public SmartCampusApplication() {
+        packages("com.smartcampus");
+    }
 }
