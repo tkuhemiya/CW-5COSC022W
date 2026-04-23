@@ -1,10 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
-        <title>Start Page</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Smart Campus API</title>
     </head>
     <body>
-        <h1>Hello World!</h1>
+        <h1>Smart Campus API</h1>
+        <p>Base path: <code>/api/v1</code></p>
+
+        <h2>Discovery</h2>
+        <ul>
+            <li><code>GET /api/v1</code> - API discovery document</li>
+        </ul>
+
+        <h2>Rooms</h2>
+        <ul>
+            <li><code>GET /api/v1/rooms</code> - list all rooms</li>
+            <li><code>POST /api/v1/rooms</code> - create a room</li>
+            <li><code>GET /api/v1/rooms/{roomId}</code> - get a room by id</li>
+            <li><code>DELETE /api/v1/rooms/{roomId}</code> - delete a room</li>
+        </ul>
+
+        <h2>Sensors</h2>
+        <ul>
+            <li><code>GET /api/v1/sensors</code> - list all sensors</li>
+            <li><code>GET /api/v1/sensors?type={type}</code> - filter sensors by type</li>
+            <li><code>POST /api/v1/sensors</code> - create a sensor</li>
+        </ul>
+
+        <h2>Sensor Readings</h2>
+        <ul>
+            <li><code>GET /api/v1/sensors/{sensorId}/readings</code> - list readings for a sensor</li>
+            <li><code>POST /api/v1/sensors/{sensorId}/readings</code> - add a reading to a sensor</li>
+        </ul>
     </body>
 </html>

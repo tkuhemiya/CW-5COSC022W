@@ -86,7 +86,7 @@ public class SensorRoomResource {
             if (sensorIds != null && !sensorIds.isEmpty()) {
                 for (String sensorId : sensorIds) {
                     Sensor sensor = DataStore.sensors.get(sensorId);
-                    if (sensor != null && "ACTIVE".equals(sensor.getStatus())) {
+                    if (sensor != null) {
                         throw new RoomNotEmptyException(roomId, sensorId);
                     }
                 }
