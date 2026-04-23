@@ -1,5 +1,5 @@
+Recording.mp4
 target/
-report/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
