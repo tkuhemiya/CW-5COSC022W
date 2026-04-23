@@ -8,6 +8,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,14 +26,20 @@ public class SensorRoomResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response createRoom(Room room) {
         if (room == null || room.getId() == null || room.getId().isEmpty()) {
+            Map<String, String> body = new HashMap<>();
+            body.put("error", "Room ID is required");
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity(Map.of("error", "Room ID is required"))
+                .type(MediaType.APPLICATION_JSON)
+                .entity(body)
                 .build();
         }
         
         if (DataStore.rooms.containsKey(room.getId())) {
+            Map<String, String> body = new HashMap<>();
+            body.put("error", "Room already exists");
             return Response.status(Response.Status.CONFLICT)
-                .entity(Map.of("error", "Room already exists"))
+                .type(MediaType.APPLICATION_JSON)
+                .entity(body)
                 .build();
         }
         
@@ -49,8 +56,11 @@ public class SensorRoomResource {
     public Response getRoom(@PathParam("roomId") String roomId) {
         Room room = DataStore.rooms.get(roomId);
         if (room == null) {
+            Map<String, String> body = new HashMap<>();
+            body.put("error", "Room not found");
             return Response.status(Response.Status.NOT_FOUND)
-                .entity(Map.of("error", "Room not found"))
+                .type(MediaType.APPLICATION_JSON)
+                .entity(body)
                 .build();
         }
         return Response.ok(room).build();

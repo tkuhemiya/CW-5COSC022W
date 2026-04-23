@@ -7,6 +7,7 @@ import com.smartcampus.exception.LinkedResourceNotFoundException;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,14 +39,20 @@ public class SensorResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response createSensor(Sensor sensor) {
         if (sensor == null || sensor.getId() == null || sensor.getId().isEmpty()) {
+            Map<String, String> body = new HashMap<>();
+            body.put("error", "Sensor ID is required");
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity(Map.of("error", "Sensor ID is required"))
+                .type(MediaType.APPLICATION_JSON)
+                .entity(body)
                 .build();
         }
         
         if (DataStore.sensors.containsKey(sensor.getId())) {
+            Map<String, String> body = new HashMap<>();
+            body.put("error", "Sensor already exists");
             return Response.status(Response.Status.CONFLICT)
-                .entity(Map.of("error", "Sensor already exists"))
+                .type(MediaType.APPLICATION_JSON)
+                .entity(body)
                 .build();
         }
         
